@@ -1,55 +1,93 @@
-let hotelData = [];
+console.log("entered in app");
 
-function searchHotels() {
-  const cityInput = document.getElementById("cityInput").value.trim().toLowerCase();
-  const hotelList = document.getElementById("hotelList");
+let currentPage = 1;
+let currentCity = "";
+let lastFetchedHotels = [];
 
-  hotelList.innerHTML = "<p>Searching...</p>";
+async function searchHotels(reset = true) {
+  console.log("searching...");
+  const city = document.getElementById('cityInput').value.trim();
+  const resultsContainer = document.getElementById('results');
 
-  fetch("hotel.json")
-    .then(response => response.json())
-    .then(data => {
-      const filtered = data.filter(hotel => 
-        hotel.City && hotel.City.toLowerCase() === cityInput
-      );
+  if (reset) {
+    if (!city) return alert("Please enter a city name.");
+    currentCity = city;
+    currentPage = 1;
+  } else {
+    currentPage++;
+  }
 
-      if (filtered.length > 0) {
-        hotelData = filtered;
-        showHotels(filtered);
-      } else {
-        hotelList.innerHTML = "<p>No hotels found in that city.</p>";
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      hotelList.innerHTML = "<p>Error loading hotel data.</p>";
+  resultsContainer.innerHTML = "Loading...";
+
+  const prompt = `
+Return only a valid JSON array of 100 hotels in ${currentCity}, each with:
+- name (string)
+- city (string)
+- price_per_night (number)
+- rating (number)
+- amenities (array of strings)
+- available_rooms (number)
+- image_url (string)
+
+These should be hotels different from any in earlier pages.
+Page: ${currentPage}
+
+Do not add any explanation. Just return the JSON array directly.
+`;
+
+  try {
+    console.log("trying...");
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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"
+      },
+      body: JSON.stringify({
+        model: "llama3-70b-8192",
+        messages: [
+          { role: "user", content: prompt }
+        ]
+      })
     });
+
+    const data = await response.json();
+    console.log(data);
+    const content = data.choices[0].message.content;
+
+    const hotels = JSON.parse(content);
+    lastFetchedHotels = hotels;
+
+    resultsContainer.innerHTML = "";
+    hotels.forEach(hotel => {
+      resultsContainer.innerHTML += `
+        <div class="hotel-card">
+          <img src="${hotel.image_url}" alt="${hotel.name}" />
+          <h2>${hotel.name}</h2>
+          <p><strong>City:</strong> ${hotel.city}</p>
+          <p><strong>Price/Night:</strong> ₹${hotel.price_per_night}</p>
+          <p><strong>Rating:</strong> ${hotel.rating} ⭐</p>
+          <p><strong>Amenities:</strong> ${hotel.amenities.join(", ")}</p>
+          <p><strong>Available Rooms:</strong> ${hotel.available_rooms}</p>
+        </div>
+      `;
+    });
+
+  } catch (error) {
+    resultsContainer.innerHTML = "Failed to fetch hotels.";
+    console.error(error);
+  }
 }
 
-function showHotels(hotels) {
-  const hotelList = document.getElementById("hotelList");
-  hotelList.innerHTML = "";
+function exportToExcel() {
+  if (!lastFetchedHotels.length) {
+    alert("No hotels to export. Please search first.");
+    return;
+  }
 
-  hotels.forEach((hotel, index) => {
-    const div = document.createElement("div");
-    div.className = "hotel";
-    div.innerHTML = `
-      <h3>${hotel["Hotel Name"]}</h3>
-      <p><strong>Category:</strong> ${hotel.Category}</p>
-      <p><strong>City:</strong> ${hotel.City}</p>
-      <p><strong>State:</strong> ${hotel.State}</p>
-      <p><strong>Rooms:</strong> ${hotel["Total Rooms"]}</p>
-      <p><strong>Address:</strong> ${hotel.Address}</p>
-      <button onclick="exportHotelToExcel(${index})">Export to Excel</button>
-    `;
-    hotelList.appendChild(div);
-  });
-}
+  const worksheet = XLSX.utils.json_to_sheet(lastFetchedHotels);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Hotels");
 
-function exportHotelToExcel(index) {
-  const hotel = hotelData[index];
-  const ws = XLSX.utils.json_to_sheet([hotel]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Hotel Info");
-  XLSX.writeFile(wb, `${hotel["Hotel Name"] || "hotel"}.xlsx`);
+  XLSX.writeFile(workbook, `Hotels_${currentCity}_Page${currentPage}.xlsx`);
 }
