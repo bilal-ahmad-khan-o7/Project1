@@ -28,6 +28,7 @@ Return only a valid JSON array of 100 hotels in ${currentCity}, each with:
 - amenities (array of strings)
 - available_rooms (number)
 - image_url (string)
+- address (string)
 
 These should be hotels different from any in earlier pages.
 Page: ${currentPage}
@@ -41,7 +42,7 @@ Do not add any explanation. Just return the JSON array directly.
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer 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"
+        "Authorization": "Bearer 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"
       },
       body: JSON.stringify({
         model: "llama3-70b-8192",
@@ -69,6 +70,7 @@ Do not add any explanation. Just return the JSON array directly.
           <p><strong>Rating:</strong> ${hotel.rating} ⭐</p>
           <p><strong>Amenities:</strong> ${hotel.amenities.join(", ")}</p>
           <p><strong>Available Rooms:</strong> ${hotel.available_rooms}</p>
+          <p><strong>Address:</strong> ${hotel.address}</p> 
         </div>
       `;
     });
