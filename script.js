@@ -27,10 +27,10 @@ Return only a valid JSON array of 100 hotels in ${currentCity}, each with:
 - rating (number)
 - amenities (array of strings)
 - available_rooms (number)
-- image_url (string)
 - address (string)
-
-These should be hotels different from any in earlier pages.
+- contact_number (string)
+- contact_name (string)
+ 
 Page: ${currentPage}
 
 Do not add any explanation. Just return the JSON array directly.
@@ -42,7 +42,7 @@ Do not add any explanation. Just return the JSON array directly.
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer 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"
+        "Authorization": "Bearer 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"
       },
       body: JSON.stringify({
         model: "llama3-70b-8192",
@@ -63,14 +63,14 @@ Do not add any explanation. Just return the JSON array directly.
     hotels.forEach(hotel => {
       resultsContainer.innerHTML += `
         <div class="hotel-card">
-          <img src="${hotel.image_url}" alt="${hotel.name}" />
           <h2>${hotel.name}</h2>
           <p><strong>City:</strong> ${hotel.city}</p>
           <p><strong>Price/Night:</strong> ₹${hotel.price_per_night}</p>
           <p><strong>Rating:</strong> ${hotel.rating} ⭐</p>
           <p><strong>Amenities:</strong> ${hotel.amenities.join(", ")}</p>
           <p><strong>Available Rooms:</strong> ${hotel.available_rooms}</p>
-          <p><strong>Address:</strong> ${hotel.address}</p> 
+          <p><strong>Address:</strong> ${hotel.address}</p>
+          <p><strong>Contact:</strong> ${hotel.contact_name} (${hotel.contact_number})</p>
         </div>
       `;
     });
