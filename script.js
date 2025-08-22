@@ -42,7 +42,7 @@ Do not add any explanation. Just return the JSON array directly.
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer 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"
+        "Authorization": "Bearer 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"
       },
       body: JSON.stringify({
         model: "llama3-70b-8192",
