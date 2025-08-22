@@ -1,9 +1,3 @@
-console.log("entered in app");
-
-let currentPage = 1;
-let currentCity = "";
-let lastFetchedHotels = [];
-
 async function searchHotels(reset = true) {
   console.log("searching...");
   const city = document.getElementById('cityInput').value.trim();
@@ -20,20 +14,23 @@ async function searchHotels(reset = true) {
   resultsContainer.innerHTML = "Loading...";
 
   const prompt = `
-Return only a valid JSON array of 100 hotels in ${currentCity}, each with:
-- name (string)
-- city (string)
-- price_per_night (number)
-- rating (number)
-- amenities (array of strings)
-- available_rooms (number)
-- address (string)
-- contact_number (string)
-- contact_name (string)
- 
-Page: ${currentPage}
+Return ONLY a valid JSON array (no markdown, no extra text) of 100 unique hotels in ${currentCity}.
+Each object must strictly follow this format:
 
-Do not add any explanation. Just return the JSON array directly.
+{
+  "name": "string",
+  "city": "string",
+  "price_per_night": 123,
+  "rating": 4.5,
+  "amenities": ["string", "string"],
+  "available_rooms": 5,
+  "address": "string",
+  "contact_number": "string",
+  "contact_name": "string"
+}
+
+Do not include any explanation or formatting outside the JSON array.
+Page: ${currentPage}
 `;
 
   try {
@@ -42,21 +39,36 @@ Do not add any explanation. Just return the JSON array directly.
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer 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"
+        "Authorization": "Bearer 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"
       },
       body: JSON.stringify({
         model: "llama3-70b-8192",
-        messages: [
-          { role: "user", content: prompt }
-        ]
+        messages: [{ role: "user", content: prompt }]
       })
     });
 
     const data = await response.json();
     console.log(data);
-    const content = data.choices[0].message.content;
 
-    const hotels = JSON.parse(content);
+    let content = data.choices[0].message.content.trim();
+    console.log("RAW:", content);
+
+    // Extract only the JSON array part
+    const jsonMatch = content.match(/\[.*\]/s);
+    if (!jsonMatch) {
+      resultsContainer.innerHTML = "No valid JSON found in response.";
+      return;
+    }
+
+    let hotels = [];
+    try {
+      hotels = JSON.parse(jsonMatch[0]);
+    } catch (err) {
+      console.error("JSON parse error:", err);
+      resultsContainer.innerHTML = "Failed to parse hotel data.";
+      return;
+    }
+
     lastFetchedHotels = hotels;
 
     resultsContainer.innerHTML = "";
@@ -79,17 +91,4 @@ Do not add any explanation. Just return the JSON array directly.
     resultsContainer.innerHTML = "Failed to fetch hotels.";
     console.error(error);
   }
-}
-
-function exportToExcel() {
-  if (!lastFetchedHotels.length) {
-    alert("No hotels to export. Please search first.");
-    return;
-  }
-
-  const worksheet = XLSX.utils.json_to_sheet(lastFetchedHotels);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Hotels");
-
-  XLSX.writeFile(workbook, `Hotels_${currentCity}_Page${currentPage}.xlsx`);
 }
