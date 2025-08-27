@@ -39,7 +39,7 @@ Page: ${currentPage}
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer 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"
+        "Authorization": "Bearer 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"
       },
       body: JSON.stringify({
         model: "llama3-70b-8192",
